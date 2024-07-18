@@ -1,0 +1,99 @@
+version: '3.7'
+
+services:
+
+  vectorDB:
+    image: 'chromadb/chroma:0.5.4'
+    container_name: vectordb
+    restart: unless-stopped
+    environment:
+      - IS_PERSISTENT=${IS_PERSISTENT}    
+      - ALLOW_RESET=TRUE
+    volumes:
+      # Default configuration for persist_directory in chromadb/config.py
+      # Currently it's located in "/chroma/chroma/"
+      - chroma-data:/chroma/chroma/      
+    ports:
+      - '8000:8000'
+
+  router:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: 'router:${code_name}'
+    command: nodemon --exec python -u /app/route.py
+    container_name: router
+    restart: unless-stopped
+    volumes:
+      - ./router:/app
+    env_file:
+      - .env      
+    ports:
+      - '8081:8080'
+
+  webSearch:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: 'websearch:${code_name}'
+    command: nodemon --exec python -u /app/search.py
+    container_name: websearch
+    restart: unless-stopped
+    volumes:
+      - ./webSearch:/app
+    env_file:
+      - .env    
+    ports:
+      - '8082:8080'
+
+  docReader:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PATH_TO_COPY: docReader
+    image: 'docreader:${code_name}'
+    command: nodemon --exec python -u /app/reader.py
+    container_name: docreader
+    restart: unless-stopped
+    # volumes:
+    #   - ./docReader:/app
+    env_file:
+      - .env
+    ports:
+      - '8083:8080'
+
+  docGrader:
+    # build: ./docGrader
+    build: 
+      context: .
+      dockerfile: Dockerfile    
+    image: 'docgrader:${code_name}'
+    command: nodemon --exec python -u /app/grader.py
+    container_name: docgrader
+    restart: unless-stopped
+    volumes:
+      - ./docGrader:/app
+    env_file:
+      - .env    
+    ports:
+      - '8084:8080'
+
+  llm:
+    build: ./llm
+    image: 'llm:${code_name}'
+    container_name: llm
+    restart: unless-stopped
+    depends_on:
+      - vectorDB
+    volumes:
+      - ./llm:/app
+    env_file:
+      - .env        
+    ports:
+      - '8085:8080'
+
+volumes:
+  data_vol: {}
+  chroma-data:
+    driver: local
