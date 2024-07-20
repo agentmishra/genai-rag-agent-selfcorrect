@@ -15,6 +15,8 @@ services:
       - chroma-data:/chroma/chroma/      
     ports:
       - '8000:8000'
+    networks:
+      - bridged_connected       
 
   router:
     build: 
@@ -24,12 +26,16 @@ services:
     command: nodemon --exec python -u /app/route.py
     container_name: router
     restart: unless-stopped
+    depends_on:
+      - vectorDB    
     volumes:
       - ./router:/app
     env_file:
       - .env      
     ports:
       - '8081:8080'
+    networks:
+      - bridged_connected       
 
   webSearch:
     build: 
@@ -45,6 +51,8 @@ services:
       - .env    
     ports:
       - '8082:8080'
+    networks:
+      - bridged_connected       
 
   docReader:
     build: 
@@ -56,12 +64,14 @@ services:
     command: nodemon --exec python -u /app/reader.py
     container_name: docreader
     restart: unless-stopped
-    # volumes:
-    #   - ./docReader:/app
+    volumes:
+      - ./docReader:/app
     env_file:
       - .env
     ports:
       - '8083:8080'
+    networks:
+      - bridged_connected       
 
   docGrader:
     # build: ./docGrader
@@ -78,12 +88,17 @@ services:
       - .env    
     ports:
       - '8084:8080'
+    networks:
+      - bridged_connected       
 
   llm:
-    build: ./llm
+    build: 
+      context: .
+      dockerfile: Dockerfile    
     image: 'llm:${code_name}'
     container_name: llm
     restart: unless-stopped
+    command: nodemon --exec python -u /app/model.py
     depends_on:
       - vectorDB
     volumes:
@@ -92,8 +107,37 @@ services:
       - .env        
     ports:
       - '8085:8080'
+    networks:
+      - bridged_connected       
+
+  orchestrator:
+    build: ./orchestrator
+    image: 'orchestrator:${code_name}'
+    command: nodemon --exec python -u /app/main.py
+    container_name: orchestrator
+    restart: unless-stopped
+    depends_on:
+      - vectorDB
+      - llm
+      - router
+      - webSearch
+      - docGrader
+      - docReader
+    volumes:
+      - ./orchestrator:/app
+    env_file:
+      - .env      
+    ports:
+      - '8060:8080'    
+    networks:
+      - bridged_connected      
+
 
 volumes:
   data_vol: {}
   chroma-data:
     driver: local
+
+networks:
+  bridged_connected:
+    driver: bridge    
