@@ -63,10 +63,26 @@ def generate():
         Answer: <|eot_id|><|start_header_id|>assistant<|end_header_id|>""",
         input_variables=["question", "document"],
     )
-    rag_chain = promptTmpl | llm | StrOutputParser()
-    generation = rag_chain.invoke({"context": context, "question": prompt})
-    print(generation)
-    return jsonify({"llm": "online", "result": generation})
+    try:
+        rag_chain = promptTmpl | llm | StrOutputParser()
+        generation = rag_chain.invoke({"context": context, "question": prompt})
+        print(generation)
+        return jsonify({"llm": "online", "result": generation})
+    except Exception as e: 
+        print(f"exception -->{e}")
+        response = jsonify({
+            "error": "Bad request",
+            "details": "The request could not be understood by the server due to malformed syntax",
+            "status": "error"})
+        if "Ollama call failed with status code 404" in f"{e}":
+            response = jsonify({
+            "error": "Ollama server seems is missing the specified model ({local_llm})",
+            "details": "Try to pull it in ollama server by : ollama pull {local_llm}",
+            "status": "Model not found"})
+        
+        response.status_code = 400
+        return response
+
  
 if __name__ == '__main__':  
     print('ready') 

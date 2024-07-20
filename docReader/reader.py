@@ -79,6 +79,26 @@ def populate():
     total_items =  len(collection.get()["ids"]) 
     return jsonify({"docReader": "online", "result": f"Collection populated, total documents: {total_items}"})
 
+@app.route('/collection/search', methods=['GET'])
+def searchDocs():
+    data = request.get_json()
+    query = data.get('query')
+    max_results= data.get('maxResults')
+    if max_results == '' or max_results == None: 
+        max_results = 1  
+    if query == '' or query == None: 
+        return jsonify({'error': 'query is empty'})
+    collection = client.get_or_create_collection(collection_name) #, embedding_function=default_ef    
+
+    results = collection.query(
+        query_texts=[query],
+        n_results=max_results, 
+        include=['documents']
+        )    
+    return jsonify({"docReader": "online", "result": results['documents'][0]})
+
+
+
 if __name__ == '__main__':  
     print('ready') 
     serve(app, host="0.0.0.0", port=8080)
