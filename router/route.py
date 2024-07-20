@@ -54,16 +54,17 @@ def generateRoutePath():
         return jsonify({'error': 'prompt is empty'})    
     promptTmpl = PromptTemplate(
     template="""<|begin_of_text|><|start_header_id|>system<|end_header_id|> You are an expert at routing a 
-    user question to a vectorstore or web search. Use the vectorstore for questions on LLM  agents, 
+    user question to a vectorstore or web search.  Return the a JSON with a single key 'datasource' and 
+    no premable or explanation , datasource can have values web_search or vectorstore.You can add an short explanation of the choice selected in a new field called 
+    explain.Use the vectorstore for questions on LLM  agents, 
     prompt engineering, and adversarial attacks. You do not need to be stringent with the keywords 
     in the question related to these topics. Otherwise, use web-search. Give a binary choice 'web_search' 
-    or 'vectorstore' based on the question. Return the a JSON with a single key 'datasource' and 
-    no premable or explanation. Question to route: {question} <|eot_id|><|start_header_id|>assistant<|end_header_id|>""",
+    or 'vectorstore' based on the question. Question to route: {question} <|eot_id|><|start_header_id|>assistant<|end_header_id|>""",
     input_variables=["question"],
 )
     rag_chain = promptTmpl | llm | StrOutputParser()
     generation = rag_chain.invoke({"question": prompt})
-    print(generation)
+    print(f"route generation: {generation}")
     return jsonify({"llm": "online", "result": generation})
  
 if __name__ == '__main__':  
