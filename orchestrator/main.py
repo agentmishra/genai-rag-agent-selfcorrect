@@ -4,11 +4,16 @@ from typing import List
 import json
 from langchain_core.documents import Document
 from typing_extensions import TypedDict
+import os
+from dotenv import load_dotenv
 
 from langgraph.graph import END, StateGraph, START
 import requests
 from flask import Flask, request,jsonify
 from waitress import serve
+load_dotenv()
+
+SEARCH_SERVICE = os.getenv('SEARCH_SERVICE')
 
 ### State
 
@@ -188,7 +193,14 @@ def web_search(state):
         return {"documents": documents, "question": question}
     docs = response_data["result"] # web_search_tool.invoke({"query": question})
     print(f"search results {response_data["result"]}")
-    web_results = "\n".join([d["content"] for d in docs])
+    web_results=''
+    if SEARCH_SERVICE == 'duckduck':
+        web_results = "\n".join([d["body"] for d in docs])
+    elif SEARCH_SERVICE == 'tavily':
+        web_results = "\n".join([d["content"] for d in docs])
+
+    print(f"search results {web_results}")
+    
     if documents is not None:
         documents.append(web_results)
     else:

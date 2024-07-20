@@ -4,7 +4,7 @@ ARG PATH_TO_COPY=.
 RUN pip install -U  torch python-dotenv langchain-nomic langchain_community tiktoken langchainhub chromadb langchain \
     langgraph tavily-python nomic[local] langchain-text-splitters    
 
-RUN pip install -U bs4 uuid waitress flask
+RUN pip install -U bs4 uuid waitress flask duckduckgo_search
 # Install Node.js and npm
 RUN curl -sS https://deb.nodesource.com/setup_22.x | bash -
 RUN apt-get update && apt-get install -y nodejs npm && npm i -g nodemon
